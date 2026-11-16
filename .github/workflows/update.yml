@@ -36,9 +36,9 @@ jobs:
       - name: 判斷是否有變更
         id: diff
         run: |
-          if git diff --quiet -- index.html data/; then
+          if git diff --quiet -- index.html; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "本次沒有新資料，仍會重新發佈一次"
+            echo "本次沒有新資料，不建立 commit，仍會重新發佈一次"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             git diff --stat -- index.html data/
@@ -49,7 +49,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html data/
+          git add index.html data/lotto_history.json
           git commit -m "chore: 更新開獎資料 $(date -u +%Y-%m-%d)"
           git push
 
