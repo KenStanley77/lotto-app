@@ -1,0 +1,93 @@
+name: 驗證台彩 API 是否可連線
+
+# 這支只做一件事：從 GitHub 的機器試抓台彩官方資料，確認境外 IP 能不能取數。
+# 它不會寫入任何檔案，也不會產生 commit。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取出程式
+        uses: actions/checkout@v4
+
+      - name: 準備 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 只抓資料、不寫檔
+        run: python update_lotto.py --check-only --verbose
+name: 每月更新開獎號碼
+
+# 每月 2 日 UTC 01:17 = 台灣時間 09:17（刻意避開整點，降低被延遲或跳過的機率）
+on:
+  schedule:
+    - cron: "17 1 2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: lotto-monthly-update
+  cancel-in-progress: false
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 取出程式
+        uses: actions/checkout@v4
+
+      - name: 準備 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 抓取官方資料並改寫 HTML
+        run: python update_lotto.py --verbose
+
+      - name: 判斷是否有變更
+        id: diff
+        run: |
+          if git diff --quiet -- index.html data/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "本次沒有新資料，仍會重新發佈一次"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- index.html data/
+          fi
+
+      - name: 提交更新（保留歷史紀錄）
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html data/
+          git commit -m "chore: 更新開獎資料 $(date -u +%Y-%m-%d)"
+          git push
+
+      # 只把 index.html 放進 _site，避免把程式與資料檔一起公開在網站上
+      - name: 準備要發佈的內容
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+
+      - name: 封裝 Pages 產物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: 發佈到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
