@@ -12,8 +12,19 @@ Pages 隨後自動重新發佈。手機打開網址就是最新資料。
 | `update_lotto.py` | 更新引擎：抓官方 API、去重合併、改寫 HTML、更新封存檔 |
 | `data/lotto_history.json` | 完整歷史封存（目前 457 期） |
 | `data/last_run.json` | 上一次執行結果（是否有變更、期數、時間） |
-| `.github/workflows/update.yml` | 每月定時更新並 commit |
+| `.github/workflows/update.yml` | 每月定時更新、commit，並由 workflow 直接發佈 Pages |
 | `.github/workflows/probe.yml` | 手動觸發，只驗證台彩 API 能否從 GitHub 取數，不寫任何檔案 |
+
+## Pages 設定（重要）
+
+Repo 的 Settings → Pages → **Build and deployment → Source 請選「GitHub Actions」**，
+不要選「Deploy from a branch」。
+
+原因：由 workflow 使用 `GITHUB_TOKEN` 推送的 commit **不會觸發**分支式的 Pages 重建，
+若用分支模式，網站會一直停在最初那一版。改成 GitHub Actions 模式後，由 `update.yml`
+自己封裝並部署，每次執行都一定重新發佈。
+
+`update.yml` 只把 `index.html` 放進 `_site` 再上傳，程式與資料檔不會被公開在網站上。
 
 ## 手動測試
 
