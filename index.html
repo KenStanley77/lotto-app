@@ -501,14 +501,6 @@ function drawCombo(model, rnd, candidates, topFrac){
   const pick = pool[Math.floor(rnd()*k)].c;
   return { combo: pick, score: scoreCombo(pick, model).total, best: best.c, bestScore: best.s };
 }
-function sampleSpecial(model, rnd, exclude){
-  const rw = new Array(50).fill(0);
-  for(let n=1;n<=49;n++) rw[n] = (exclude.indexOf(n)>=0) ? 0 : 0.25 + model.sw[n];
-  let tot=0; for(let n=1;n<=49;n++) tot+=rw[n];
-  let r=rnd()*tot, acc=0;
-  for(let n=1;n<=49;n++){ acc+=rw[n]; if(acc>=r) return n; }
-  return 49;
-}
 /* 可重現亂數（回測與理論首選用） */
 function mulberry32(seed){
   let t = seed>>>0;
@@ -565,13 +557,11 @@ function ball(n, cls, label){
 function idleStage(){
   let h = "";
   for(let i=0;i<6;i++) h += ball(0,"idle");
-  h += '<span class="plus">+</span>' + ball(0,"idle special","特別號");
   els("stage").innerHTML = h;
 }
-function renderStage(combo, special, animate){
+function renderStage(combo, animate){
   let h = "";
   combo.forEach((n,i)=>{ h += ball(n,"", ""); });
-  h += '<span class="plus">+</span>' + ball(special,"special","特別號");
   els("stage").innerHTML = h;
   if(animate) els("stage").querySelectorAll(".ball").forEach((b,i)=>{
     b.style.animationDelay = (i*70)+"ms"; b.classList.add("pop");
@@ -592,26 +582,22 @@ function doDraw(mode){
   const rnd = Math.random;
   if(mode === "best"){
     const res = drawCombo(model, mulberry32(20261029), 20000, 1/20000); // 取樣本中評分最高者
-    const allowed = []; for(let n=1;n<=49;n++) if(res.combo.indexOf(n)<0) allowed.push(n);
-    let sp = allowed[0];
-    for(const n of allowed) if(model.sw[n] > model.sw[sp]) sp = n;
     const sc = scoreCombo(res.combo, model);
-    lastResult = [{combo:res.combo, special:sp, score:sc}];
-    paint(res.combo, sp, model, strategy, sc.total, null);
+    lastResult = [{combo:res.combo, score:sc}];
+    paint(res.combo, model, strategy, sc.total, null);
     return;
   }
   const results = [];
   for(let i=0;i<sets;i++){
     const res = drawCombo(model, rnd, 4000, 0.05);
-    const sp = sampleSpecial(model, rnd, res.combo);
-    results.push({combo:res.combo, special:sp, score:scoreCombo(res.combo,model), best:res.best});
+    results.push({combo:res.combo, score:scoreCombo(res.combo,model), best:res.best});
   }
   lastResult = results;
-  paint(results[0].combo, results[0].special, model, strategy, results[0].score.total, results);
+  paint(results[0].combo, model, strategy, results[0].score.total, results);
 }
 
-function paint(combo, special, model, strategy, scoreVal, results){
-  renderStage(combo, special, true);
+function paint(combo, model, strategy, scoreVal, results){
+  renderStage(combo, true);
   const sc = scoreCombo(combo, model);
   els("scorebar").innerHTML =
       scoreBar("模型評分（0–100）", (sc.total*100).toFixed(1), 100, "",
@@ -635,9 +621,7 @@ function paint(combo, special, model, strategy, scoreVal, results){
   els("breakdown").innerHTML =
     '<table><thead><tr><th class="num">號碼</th><th class="num">全期次數</th><th class="num">近100期</th>'
    +'<th class="num">近30期</th><th class="num">遺漏期數</th><th class="num">權重('+strategyName+')</th></tr></thead>'
-   +'<tbody>'+rows+'</tbody></table>'
-   +'<p class="hint" style="margin:14px 0 0">特別號 '+pad(special)+'：特別號權重 '+model.sw[special].toFixed(3)
-   +'（全期開出 '+model.spAll[special]+' 次）</p>';
+   +'<tbody>'+rows+'</tbody></table>';
 
   // 結構檢核
   const p = sc.parts;
@@ -664,7 +648,7 @@ function paint(combo, special, model, strategy, scoreVal, results){
     let h = '<div class="card" style="margin-top:18px"><h2>其他注數</h2><p class="hint">同一策略下另外抽出的組合。</p>';
     h += results.slice(1).map((r,i)=>'<div style="padding:7px 0;border-bottom:1px solid #1c2540">'
         +'<span class="numline" style="font-size:15px">'+r.combo.map(x=>'<b>'+pad(x)+'</b>').join(" ")
-        +' <u>'+pad(r.special)+'</u></span>'
+        +'</span>'
         +'<span style="float:right;color:#8f9ab5;font-family:var(--font-num)">評分 '+(r.score.total*100).toFixed(1)+'</span></div>').join("");
     h += '</div>';
     els("extraSets").innerHTML = h;
@@ -827,7 +811,7 @@ els("btnDraw").addEventListener("click",()=>doDraw("draw"));
 els("btnBest").addEventListener("click",()=>doDraw("best"));
 els("btnCopy").addEventListener("click",()=>{
   if(!lastResult){ alert("請先抽出一組號碼"); return; }
-  const txt = lastResult.map(r=>r.combo.map(pad).join(" ")+"  + "+pad(r.special)).join("\n");
+  const txt = lastResult.map(r=>r.combo.map(pad).join(" ")).join("\n");
   (navigator.clipboard? navigator.clipboard.writeText(txt): Promise.reject())
     .then(()=>{ els("btnCopy").textContent="已複製 ✓"; setTimeout(()=>els("btnCopy").textContent="複製號碼",1600); })
     .catch(()=>{ prompt("請手動複製：", txt); });
