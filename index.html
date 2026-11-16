@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大樂透 · 三年大數據高機率選號器</title>
+<style>
+  :root{
+    --ink:#080b14;
+    --ink2:#0d1220;
+    --panel:#121a2c;
+    --panel2:#172038;
+    --line:#26314d;
+    --text:#e8e4da;
+    --dim:#8f9ab5;
+    --gold:#f2c14e;
+    --gold2:#ffe6a3;
+    --red:#e03e57;
+    --jade:#2fd6a5;
+    --paper:#f5efe2;
+    --font-cjk:"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC","Songti TC",sans-serif;
+    --font-num:"Bahnschrift","DIN Alternate","Consolas","Menlo",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1100px 620px at 12% -8%, rgba(242,193,78,.16), transparent 62%),
+      radial-gradient(900px 560px at 92% 4%, rgba(224,62,87,.15), transparent 60%),
+      linear-gradient(180deg,#080b14 0%,#0a1020 45%,#080b14 100%);
+    color:var(--text);
+    font-family:var(--font-cjk);
+    font-size:15px;
+    line-height:1.7;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.045;
+    background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.6) 0 1px,transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 20px 60px}
+
+  /* ---------- header ---------- */
+  .top{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:space-between;
+       padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;gap:16px;align-items:center}
+  .mark{
+    width:64px;height:64px;flex:0 0 64px;border-radius:50%;
+    background:radial-gradient(circle at 32% 26%,var(--gold2),var(--gold) 42%,#b8860b 100%);
+    color:#25190a;font-family:var(--font-num);font-weight:700;font-size:19px;
+    display:flex;align-items:center;justify-content:center;letter-spacing:-.5px;
+    box-shadow:0 0 0 1px rgba(255,231,163,.5),0 10px 26px -8px rgba(242,193,78,.65);
+  }
+  .mark i{font-style:normal;font-size:13px;opacity:.75;margin-right:1px}
+  h1{font-size:25px;margin:0 0 3px;letter-spacing:.5px;font-weight:700}
+  h1 em{font-style:normal;color:var(--gold)}
+  .sub{margin:0;color:var(--dim);font-size:13px;line-height:1.6}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:rgba(18,26,44,.75);border-radius:999px;
+        padding:5px 13px;font-size:12.5px;color:var(--dim);font-family:var(--font-num)}
+  .chip b{color:var(--gold);font-weight:600}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:6px;margin:22px 0 20px;flex-wrap:wrap}
+  .tab{
+    appearance:none;border:1px solid var(--line);background:rgba(13,18,32,.7);color:var(--dim);
+    padding:9px 18px;border-radius:10px 10px 0 0;font-family:var(--font-cjk);font-size:14px;
+    cursor:pointer;transition:.18s;border-bottom-color:transparent;position:relative;top:1px;
+  }
+  .tab:hover{color:var(--text);border-color:#39476b}
+  .tab[aria-selected="true"]{
+    color:var(--ink);font-weight:700;border-color:var(--gold);
+    background:linear-gradient(180deg,var(--gold2),var(--gold));
+    box-shadow:0 -6px 20px -8px rgba(242,193,78,.7);
+  }
+  .panel{display:none;animation:fade .28s ease}
+  .panel.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:linear-gradient(180deg,rgba(23,32,56,.92),rgba(13,18,32,.92));
+    border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:18px;
+    box-shadow:0 20px 40px -30px #000;
+  }
+  .card > h2{font-size:16px;margin:0 0 4px;letter-spacing:.6px;display:flex;align-items:center;gap:9px}
+  .card > h2::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--gold)}
+  .card > p.hint{margin:2px 0 16px;color:var(--dim);font-size:12.5px}
+
+  /* ---------- draw stage ---------- */
+  .stage{
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px;
+    padding:30px 16px 26px;border-radius:12px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(520px 240px at 50% 0%,rgba(242,193,78,.13),transparent 70%),
+      repeating-linear-gradient(90deg,rgba(255,255,255,.032) 0 1px,transparent 1px 42px),
+      repeating-linear-gradient(0deg,rgba(255,255,255,.032) 0 1px,transparent 1px 42px),
+      #0a0f1d;
+    border:1px solid #1d2540;
+  }
+  .ball{
+    width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-num);font-size:25px;font-weight:700;flex:0 0 auto;
+    background:radial-gradient(circle at 32% 26%,#fffdf5,var(--paper) 34%,#cdc4ae 100%);
+    color:#141a2b;border:1px solid rgba(255,255,255,.5);
+    box-shadow:0 12px 22px -12px rgba(0,0,0,.9),inset 0 2px 4px rgba(255,255,255,.9);position:relative;
+  }
+  /* 特別號標籤已由 JS 的 ball() 函數移至球體外部包裹，此處保留以確保向後相容 */
+  .ball small{display:none}
+  .ball.special{
+    background:radial-gradient(circle at 32% 26%,#ffd9df,var(--red) 42%,#8c1528 100%);
+    color:#fff4f4;border-color:rgba(255,180,190,.45);
+  }
+  .ball.idle{background:radial-gradient(circle at 32% 26%,#202a45,#161e33 60%,#0d1322);
+             color:#3c4a6b;border-color:#243050;box-shadow:inset 0 0 18px rgba(0,0,0,.6)}
+  .ball.pop{animation:pop .5s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes pop{0%{transform:scale(.35) rotate(-16deg);opacity:0}60%{transform:scale(1.13)}100%{transform:none;opacity:1}}
+  .plus{font-family:var(--font-num);color:var(--dim);font-size:20px;padding:0 4px}
+
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+  button.btn{
+    appearance:none;cursor:pointer;font-family:var(--font-cjk);font-size:14.5px;font-weight:700;
+    padding:12px 22px;border-radius:11px;border:1px solid transparent;transition:.18s;
+    background:linear-gradient(180deg,var(--gold2),var(--gold));color:#25190a;
+    box-shadow:0 14px 30px -16px rgba(242,193,78,.9);
+  }
+  button.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  button.btn:active{transform:translateY(0)}
+  button.btn.ghost{background:transparent;color:var(--gold);border-color:#3c4a6b;box-shadow:none}
+  button.btn.ghost:hover{border-color:var(--gold);background:rgba(242,193,78,.07)}
+  .field{display:flex;align-items:center;gap:8px;color:var(--dim);font-size:13px}
+  select{
+    appearance:none;background:#0d1322;color:var(--text);border:1px solid var(--line);
+    padding:9px 34px 9px 12px;border-radius:9px;font-family:var(--font-cjk);font-size:13.5px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0h10L5 6z' fill='%238f9ab5'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;
+  }
+  select:focus{outline:none;border-color:var(--gold)}
+
+  .scorebar{display:flex;gap:14px;margin-top:20px;flex-wrap:wrap}
+  .scorebox{flex:1 1 200px;background:#0b1120;border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  .scorebox .k{font-size:12px;color:var(--dim);letter-spacing:.6px}
+  .scorebox .v{font-family:var(--font-num);font-size:27px;font-weight:700;color:var(--gold);line-height:1.25}
+  .scorebox .v span{font-size:13px;color:var(--dim);font-weight:400}
+  .track{height:6px;border-radius:3px;background:#1b2440;overflow:hidden;margin-top:9px}
+  .track i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));
+           transition:width .5s cubic-bezier(.2,.9,.2,1)}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid #1c2540}
+  th{color:var(--dim);font-weight:600;font-size:12.5px;letter-spacing:.5px}
+  td.num,th.num{font-family:var(--font-num);text-align:right}
+  tbody tr:hover{background:rgba(242,193,78,.045)}
+  .tag{display:inline-block;padding:2px 9px;border-radius:6px;font-size:12px;font-family:var(--font-num)}
+  .tag.ok{background:rgba(47,214,165,.14);color:var(--jade);border:1px solid rgba(47,214,165,.35)}
+  .tag.no{background:rgba(224,62,87,.13);color:#ff8b9d;border:1px solid rgba(224,62,87,.35)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media (max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  /* heat grid of 49 numbers */
+  .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  .heat div{
+    border-radius:8px;padding:9px 0;text-align:center;font-family:var(--font-num);
+    font-size:15px;font-weight:700;border:1px solid rgba(255,255,255,.07);position:relative;
+  }
+  .heat div em{display:block;font-style:normal;font-size:10px;opacity:.72;font-weight:400}
+
+  .bars{display:flex;flex-direction:column;gap:7px}
+  .bar{display:grid;grid-template-columns:56px 1fr 66px;align-items:center;gap:10px;font-size:13px}
+  .bar .lbl{font-family:var(--font-num);color:var(--dim)}
+  .bar .fill{height:11px;border-radius:6px;background:linear-gradient(90deg,#8a6a1c,var(--gold));min-width:2px}
+  .bar .val{font-family:var(--font-num);text-align:right;color:var(--text);font-size:12.5px}
+  .vbar{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:8px}
+  .vbar > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;
+              text-align:center;font-family:var(--font-num);font-size:10.5px;color:var(--dim)}
+  .vbar > div i{display:block;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--gold2),#a67c1a)}
+  .vbar > div em{font-style:normal;margin-top:5px;white-space:nowrap}
+
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .pill{appearance:none;border:1px solid var(--line);background:#0d1322;color:var(--dim);
+        padding:6px 14px;border-radius:8px;font-family:var(--font-cjk);font-size:13px;cursor:pointer}
+  .pill[aria-pressed="true"]{border-color:var(--gold);color:var(--gold);background:rgba(242,193,78,.08)}
+
+  .listline{display:flex;flex-wrap:wrap;gap:7px}
+  .mini{
+    font-family:var(--font-num);font-size:13px;padding:5px 9px;border-radius:7px;
+    background:#0b1120;border:1px solid #222c48;color:var(--text)
+  }
+  .mini b{color:var(--gold);font-weight:600}
+  .mini.hot{border-color:rgba(224,62,87,.45);background:rgba(224,62,87,.10)}
+  .mini.cold{border-color:rgba(47,214,165,.4);background:rgba(47,214,165,.09)}
+
+  .note{border-left:3px solid var(--gold);background:rgba(242,193,78,.06);padding:12px 16px;
+        border-radius:0 10px 10px 0;font-size:13px;color:#d8d2c4}
+  .note.warn{border-left-color:var(--red);background:rgba(224,62,87,.07)}
+  .scroll{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:11px}
+  .scroll::-webkit-scrollbar{width:9px}
+  .scroll::-webkit-scrollbar-thumb{background:#25304c;border-radius:5px}
+  .numline{font-family:var(--font-num);letter-spacing:.6px}
+  .numline b{color:var(--gold);font-weight:600}
+  .numline u{text-decoration:none;color:var(--red);font-weight:700}
+  .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:12px;line-height:1.9}
+  .kbd{font-family:var(--font-num);background:#0b1120;border:1px solid #26304c;border-radius:5px;padding:1px 6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark"><i>49</i>6</div>
+      <div>
+        <h1>大樂透 · <em>三年大數據</em>選號器</h1>
+        <p class="sub" id="scopeSub">以近三年官方開獎紀錄建模，每次抽獎依分析結果產出評分最高的號碼組合</p>
+      </div>
+    </div>
+    <div class="chips" id="metaChips"></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-panel="draw">抽獎</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="analysis">三年號碼分析</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="backtest">模型回測</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="history">歷史開獎</button>
+  </nav>
+
+  <main>
+    <!-- ============ DRAW ============ -->
+    <section class="panel on" id="panel-draw" role="tabpanel">
+      <div class="card">
+        <h2>高機率組合抽獎</h2>
+        <p class="hint">依近三年出現頻率與結構特徵加權抽樣，自數千組候選中選出評分最高的組合；每次抽獎重新取樣，結果皆不同。</p>
+
+        <div class="stage" id="stage"></div>
+
+        <div class="actions">
+          <button class="btn" id="btnDraw">依分析抽出高機率組合</button>
+          <button class="btn ghost" id="btnBest">抽取模型理論首選</button>
+          <button class="btn ghost" id="btnCopy">複製號碼</button>
+          <div class="field">
+            <label for="selStrategy">策略</label>
+            <select id="selStrategy">
+              <option value="hot">熱號優先（預設）</option>
+              <option value="momentum">近期動能</option>
+              <option value="cold">冷號回補</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="selSets">注數</label>
+            <select id="selSets">
+              <option value="1">1 注</option>
+              <option value="3">3 注</option>
+              <option value="5">5 注</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="scorebar" id="scorebar"></div>
+        <div id="extraSets"></div>
+      </div>
+
+      <div class="card">
+        <h2>本次組合明細</h2>
+        <p class="hint">每個號碼的權重來源；權重由策略決定，數值已正規化至 0–1。</p>
+        <div id="breakdown"></div>
+      </div>
+
+      <div class="card">
+        <h2>結構檢核</h2>
+        <p class="hint" id="structHint">比對本次組合與近三年 354 期的常見結構區間（和值取歷史第 10–90 百分位）。</p>
+        <div id="structTable"></div>
+        <div class="note" style="margin-top:16px" id="fitNote"></div>
+      </div>
+    </section>
+
+    <!-- ============ ANALYSIS ============ -->
+    <section class="panel" id="panel-analysis" role="tabpanel">
+      <div class="card">
+        <h2>號碼熱度圖（1–49）</h2>
+        <p class="hint" id="heatHint"></p>
+        <div class="heat" id="heatGrid"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>出現次數排行</h2>
+          <p class="hint">主號（不含特別號）在三年內的累計出現次數。</p>
+          <div class="bars" id="freqAll" style="margin-bottom:18px"></div>
+          <div id="hotColdCards"></div>
+        </div>
+        <div class="card">
+          <h2>特別號排行</h2>
+          <p class="hint">特別號單獨統計；平均每號應出現約 <span id="spExpect"></span> 次。</p>
+          <div class="bars" id="freqSpecial"></div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>區間分布</h2>
+          <p class="hint">五個區間的出現次數與每期平均開出個數。</p>
+          <div class="bars" id="zoneBars"></div>
+        </div>
+        <div class="card">
+          <h2>遺漏期數（最久未開）</h2>
+          <p class="hint">距最後一次出現於主號的期數，數字越大代表越久沒開。</p>
+          <div class="bars" id="gapBars"></div>
+        </div>
+      </div>
+
+      <div class="grid3">
+        <div class="card">
+          <h2>單雙比</h2>
+          <p class="hint">6 個號碼中奇數的個數分布。</p>
+          <div class="vbar" id="oddChart"></div>
+        </div>
+        <div class="card">
+          <h2>大小比</h2>
+          <p class="hint">大 = 25–49，小 = 1–24。</p>
+          <div class="vbar" id="bigChart"></div>
+        </div>
+        <div class="card">
+          <h2>連號對數</h2>
+          <p class="hint">相鄰號碼連續出現的對數分布。</p>
+          <div class="vbar" id="pairChart"></div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>和值分布</h2>
+          <p class="hint" id="sumHint"></p>
+          <div class="vbar" id="sumChart"></div>
+        </div>
+        <div class="card">
+          <h2>尾數分布</h2>
+          <p class="hint">每個號碼除以 10 的餘數統計。</p>
+          <div class="vbar" id="tailChart"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>模型權重排行</h2>
+        <p class="hint">切換策略檢視各號碼權重；權重 = 各期別熱度的加權平均（正規化 0–1）。</p>
+        <div class="pills" id="strategyPills"></div>
+        <div class="grid2">
+          <div><div class="bars" id="weightHigh"></div></div>
+          <div><div class="bars" id="weightLow"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BACKTEST ============ -->
+    <section class="panel" id="panel-backtest" role="tabpanel">
+      <div class="card">
+        <h2>走查式回測（Walk-forward）</h2>
+        <p class="hint">自第 101 期起逐期回測：每一期只用該期之前的開獎資料重新建模、產生一組號碼，再與該期實際開獎號碼比對。</p>
+        <div class="actions" style="margin-top:0">
+          <button class="btn" id="btnBacktest">執行回測</button>
+          <span class="field" id="btStatus">尚未執行</span>
+        </div>
+        <div id="btResult" style="margin-top:18px"></div>
+      </div>
+      <div class="card">
+        <h2>如何解讀這些數字</h2>
+        <div class="note warn">
+          大樂透每一組號碼的中獎機率完全相同（頭獎 1 / 13,983,816）。本程式的「高機率組合」指的是<strong>與近三年歷史分布最貼合</strong>的組合，屬於描述性統計結果，
+          <strong>不是</strong>能提高中獎率的預測；回測數據也顯示模型命中率與隨機選號幾乎一致。請把它當成有趣的資料分析工具，量力而為。
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HISTORY ============ -->
+    <section class="panel" id="panel-history" role="tabpanel">
+      <div class="card">
+        <h2>歷史開獎紀錄</h2>
+        <p class="hint">資料來源：台灣彩券官方開獎結果查詢；號碼以官方公告為準。最後一顆為特別號。</p>
+        <div class="pills" id="yearPills"></div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>年份</th><th>開獎日期</th><th>期別</th><th>開獎號碼</th><th class="num">特別號</th></tr></thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="foot">
+    資料範圍：<span id="footRange"></span>｜資料筆數：<span id="footCount"></span> 期｜來源：台灣彩券官方開獎結果<br>
+    本工具為個人資料分析用途，與台灣彩券公司無關；不保證中獎，請理性消費。
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   資料：[[開獎日期, [6 個主號(升冪)], 特別號, 期別], ...]
+   ========================================================= */
+const DRAWS = [["2023-11-17",[15,30,31,34,40,45],47,112000104],["2023-11-21",[16,21,26,30,37,47],31,112000105],["2023-11-24",[9,16,20,42,43,48],2,112000106],["2023-11-28",[12,18,23,27,33,44],39,112000107],["2023-12-01",[4,15,18,23,40,47],42,112000108],["2023-12-05",[10,14,30,38,42,48],37,112000109],["2023-12-08",[5,8,22,27,28,29],16,112000110],["2023-12-12",[6,20,30,33,38,46],16,112000111],["2023-12-15",[1,9,22,28,33,39],7,112000112],["2023-12-19",[14,18,20,26,38,48],2,112000113],["2023-12-22",[8,9,20,34,35,49],40,112000114],["2023-12-26",[8,19,28,29,30,46],10,112000115],["2023-12-29",[1,11,23,31,39,46],17,112000116],["2024-01-02",[4,14,18,21,36,38],1,113000001],["2024-01-05",[2,20,23,30,35,47],40,113000002],["2024-01-09",[12,29,31,37,44,49],3,113000003],["2024-01-12",[4,25,29,38,42,46],6,113000004],["2024-01-16",[1,3,20,21,36,40],44,113000005],["2024-01-19",[1,3,7,19,31,46],40,113000006],["2024-01-23",[2,14,17,26,27,47],4,113000007],["2024-01-26",[2,11,20,34,46,47],40,113000008],["2024-01-30",[7,19,30,38,40,45],27,113000009],["2024-02-02",[5,9,25,35,38,39],24,113000010],["2024-02-06",[14,19,23,26,34,40],5,113000011],["2024-02-07",[20,22,31,34,35,37],7,113000012],["2024-02-08",[5,8,25,31,39,47],22,113000013],["2024-02-09",[3,7,16,20,25,30],37,113000014],["2024-02-10",[5,6,11,13,28,34],4,113000015],["2024-02-11",[11,13,23,29,44,45],27,113000016],["2024-02-12",[16,22,37,46,47,49],4,113000017],["2024-02-13",[2,3,6,39,44,47],34,113000018],["2024-02-14",[7,12,19,26,32,39],44,113000019],["2024-02-15",[4,8,18,19,20,33],3,113000020],["2024-02-16",[19,24,33,42,43,45],16,113000021],["2024-02-17",[4,5,20,27,32,40],6,113000022],["2024-02-18",[6,12,24,32,36,44],45,113000023],["2024-02-19",[2,10,17,32,38,48],8,113000024],["2024-02-20",[6,8,17,27,34,46],25,113000025],["2024-02-21",[13,21,25,27,31,43],47,113000026],["2024-02-22",[9,11,18,31,39,46],5,113000027],["2024-02-23",[3,8,9,21,34,49],22,113000028],["2024-02-24",[8,15,21,27,46,48],31,113000029],["2024-02-27",[7,15,17,29,41,42],28,113000030],["2024-03-01",[1,29,30,39,46,47],17,113000031],["2024-03-05",[10,15,21,24,26,38],37,113000032],["2024-03-08",[7,26,27,29,36,40],32,113000033],["2024-03-12",[3,13,22,27,45,49],17,113000034],["2024-03-15",[8,18,33,37,40,43],31,113000035],["2024-03-19",[8,14,19,20,21,36],28,113000036],["2024-03-22",[4,16,38,40,41,48],35,113000037],["2024-03-26",[6,19,21,29,32,46],11,113000038],["2024-03-29",[2,3,13,15,43,48],1,113000039],["2024-04-02",[27,32,38,39,46,49],24,113000040],["2024-04-05",[4,31,35,38,40,48],18,113000041],["2024-04-09",[3,16,17,19,22,26],1,113000042],["2024-04-12",[3,5,12,15,17,39],24,113000043],["2024-04-16",[5,8,17,33,35,40],10,113000044],["2024-04-19",[7,10,16,22,31,46],42,113000045],["2024-04-23",[13,14,17,32,33,36],31,113000046],["2024-04-26",[13,21,22,26,33,34],35,113000047],["2024-04-30",[3,9,13,22,33,43],14,113000048],["2024-05-03",[6,11,12,22,34,39],42,113000049],["2024-05-07",[7,9,15,28,30,33],26,113000050],["2024-05-10",[15,19,30,35,38,41],25,113000051],["2024-05-14",[6,7,10,25,32,43],33,113000052],["2024-05-17",[15,33,34,40,41,49],27,113000053],["2024-05-21",[1,30,34,35,38,42],15,113000054],["2024-05-24",[4,23,24,28,30,40],41,113000055],["2024-05-28",[12,17,18,21,33,37],9,113000056],["2024-05-31",[8,14,16,19,23,32],49,113000057],["2024-06-04",[7,30,33,34,35,46],49,113000058],["2024-06-07",[19,24,29,36,37,43],17,113000059],["2024-06-11",[7,10,12,27,36,46],18,113000060],["2024-06-14",[1,7,9,18,36,47],32,113000061],["2024-06-18",[6,24,31,35,36,42],18,113000062],["2024-06-21",[2,17,31,42,44,46],10,113000063],["2024-06-25",[6,8,12,29,41,48],14,113000064],["2024-06-28",[10,11,25,31,36,41],27,113000065],["2024-07-02",[1,33,38,39,41,45],46,113000066],["2024-07-05",[2,11,20,25,37,49],42,113000067],["2024-07-09",[15,18,19,31,39,40],25,113000068],["2024-07-12",[2,13,19,33,46,49],23,113000069],["2024-07-16",[4,12,22,29,36,47],15,113000070],["2024-07-19",[11,13,25,28,33,40],31,113000071],["2024-07-23",[3,6,10,23,33,35],24,113000072],["2024-07-26",[6,19,23,35,41,46],8,113000073],["2024-07-30",[5,15,24,35,46,48],17,113000074],["2024-08-02",[2,4,5,15,20,33],25,113000075],["2024-08-06",[20,27,31,33,38,46],23,113000076],["2024-08-09",[14,20,27,42,44,47],40,113000077],["2024-08-13",[2,28,30,37,40,48],8,113000078],["2024-08-16",[4,6,14,31,44,45],1,113000079],["2024-08-20",[12,13,18,28,39,49],2,113000080],["2024-08-23",[16,20,32,34,37,43],17,113000081],["2024-08-27",[12,22,24,38,40,46],21,113000082],["2024-08-30",[2,17,25,29,32,38],24,113000083],["2024-09-03",[5,22,25,27,36,41],11,113000084],["2024-09-06",[9,15,17,38,45,49],47,113000085],["2024-09-10",[6,14,16,25,35,38],31,113000086],["2024-09-13",[13,17,26,39,43,48],3,113000087],["2024-09-17",[26,34,35,40,44,46],32,113000088],["2024-09-20",[4,8,18,30,35,49],11,113000089],["2024-09-24",[5,13,14,16,37,48],39,113000090],["2024-09-27",[2,3,5,21,45,49],47,113000091],["2024-10-01",[10,12,13,19,27,33],30,113000092],["2024-10-04",[12,17,19,27,38,42],40,113000093],["2024-10-08",[3,5,7,31,33,45],19,113000094],["2024-10-11",[7,9,12,21,26,32],27,113000095],["2024-10-15",[5,10,13,28,39,41],49,113000096],["2024-10-18",[14,20,26,43,45,49],7,113000097],["2024-10-22",[2,24,29,30,38,49],47,113000098],["2024-10-25",[7,19,25,35,36,38],42,113000099],["2024-10-29",[19,26,36,38,39,49],16,113000100],["2024-11-01",[6,10,23,27,34,47],22,113000101],["2024-11-05",[4,17,21,30,41,49],48,113000102],["2024-11-08",[1,11,42,46,47,49],7,113000103],["2024-11-12",[11,25,26,33,34,41],27,113000104],["2024-11-15",[24,25,30,36,41,43],21,113000105],["2024-11-19",[5,7,11,22,25,44],13,113000106],["2024-11-22",[14,16,22,33,36,48],3,113000107],["2024-11-26",[11,40,42,45,47,49],27,113000108],["2024-11-29",[13,20,28,32,38,49],46,113000109],["2024-12-03",[5,6,7,12,17,35],45,113000110],["2024-12-06",[9,15,18,33,44,47],28,113000111],["2024-12-10",[1,5,8,26,47,49],38,113000112],["2024-12-13",[7,11,28,29,38,39],33,113000113],["2024-12-17",[8,10,22,24,31,34],44,113000114],["2024-12-20",[3,8,18,26,40,46],22,113000115],["2024-12-24",[5,9,10,29,35,48],13,113000116],["2024-12-27",[21,26,28,30,32,34],40,113000117],["2024-12-31",[10,25,34,35,42,48],21,113000118],["2025-01-03",[6,9,15,29,30,48],23,114000001],["2025-01-07",[1,8,20,26,29,35],19,114000002],["2025-01-10",[14,29,35,36,37,49],40,114000003],["2025-01-14",[1,3,13,15,37,48],42,114000004],["2025-01-17",[11,18,32,39,44,49],46,114000005],["2025-01-21",[6,21,35,36,38,42],22,114000006],["2025-01-24",[6,22,23,30,36,37],13,114000007],["2025-01-25",[2,3,10,12,34,40],41,114000008],["2025-01-26",[7,12,16,31,40,43],34,114000009],["2025-01-27",[11,22,30,35,37,38],33,114000010],["2025-01-28",[4,8,20,26,31,34],16,114000011],["2025-01-29",[15,17,22,26,32,42],12,114000012],["2025-01-30",[5,8,27,29,30,48],35,114000013],["2025-01-31",[7,11,13,23,39,42],15,114000014],["2025-02-01",[2,9,10,18,39,40],8,114000015],["2025-02-02",[10,16,25,28,33,37],13,114000016],["2025-02-03",[7,20,29,32,33,39],47,114000017],["2025-02-04",[15,17,21,26,30,47],48,114000018],["2025-02-05",[3,6,13,32,33,41],44,114000019],["2025-02-06",[2,5,18,19,42,45],11,114000020],["2025-02-07",[14,22,25,44,46,49],16,114000021],["2025-02-08",[3,6,23,26,40,43],2,114000022],["2025-02-09",[4,6,13,14,22,25],35,114000023],["2025-02-10",[1,18,28,34,35,43],24,114000024],["2025-02-11",[7,19,25,27,34,35],12,114000025],["2025-02-12",[12,30,31,37,47,49],38,114000026],["2025-02-14",[8,11,14,29,33,45],34,114000027],["2025-02-18",[5,9,10,31,35,37],30,114000028],["2025-02-21",[2,7,27,30,38,49],6,114000029],["2025-02-25",[13,15,24,37,38,43],44,114000030],["2025-02-28",[7,19,25,26,38,39],4,114000031],["2025-03-04",[7,21,31,36,46,47],8,114000032],["2025-03-07",[5,7,26,30,40,48],8,114000033],["2025-03-11",[2,18,25,37,38,47],42,114000034],["2025-03-14",[6,7,13,17,21,23],48,114000035],["2025-03-18",[7,8,13,17,29,36],18,114000036],["2025-03-21",[13,25,29,40,46,47],22,114000037],["2025-03-25",[17,24,40,41,46,48],27,114000038],["2025-03-28",[1,7,11,15,27,30],42,114000039],["2025-04-01",[4,16,18,29,35,37],33,114000040],["2025-04-04",[7,20,29,40,43,47],28,114000041],["2025-04-08",[10,26,33,39,45,46],19,114000042],["2025-04-11",[6,10,11,17,23,32],27,114000043],["2025-04-15",[18,28,37,41,43,46],11,114000044],["2025-04-18",[2,8,15,22,29,45],9,114000045],["2025-04-22",[1,6,14,19,35,49],8,114000046],["2025-04-25",[20,21,24,25,31,35],28,114000047],["2025-04-29",[7,11,24,26,30,42],37,114000048],["2025-05-02",[2,5,39,43,45,47],26,114000049],["2025-05-06",[5,8,9,25,30,45],31,114000050],["2025-05-09",[15,27,33,42,48,49],39,114000051],["2025-05-13",[1,23,29,41,45,49],24,114000052],["2025-05-16",[13,16,22,23,34,39],14,114000053],["2025-05-20",[2,11,15,26,29,48],31,114000054],["2025-05-23",[1,7,11,24,44,48],10,114000055],["2025-05-27",[16,17,26,29,32,40],10,114000056],["2025-05-30",[3,4,13,21,38,46],2,114000057],["2025-06-03",[9,24,32,40,41,49],27,114000058],["2025-06-06",[11,13,15,39,42,46],28,114000059],["2025-06-10",[3,5,12,16,22,48],30,114000060],["2025-06-13",[1,2,10,13,20,27],49,114000061],["2025-06-17",[13,20,21,26,31,44],28,114000062],["2025-06-20",[4,20,31,40,42,48],24,114000063],["2025-06-24",[3,8,20,37,45,49],21,114000064],["2025-06-27",[4,8,9,14,21,39],37,114000065],["2025-07-01",[8,9,21,25,33,34],2,114000066],["2025-07-04",[5,13,15,18,33,37],45,114000067],["2025-07-08",[6,8,12,14,25,35],49,114000068],["2025-07-11",[15,16,26,34,48,49],46,114000069],["2025-07-15",[32,33,41,45,46,49],10,114000070],["2025-07-18",[2,25,36,37,38,46],24,114000071],["2025-07-22",[5,17,19,26,27,39],10,114000072],["2025-07-25",[2,4,23,35,41,47],6,114000073],["2025-07-29",[2,5,14,19,36,45],43,114000074],["2025-08-01",[4,14,19,28,40,41],31,114000075],["2025-08-05",[1,20,34,36,37,40],3,114000076],["2025-08-08",[11,16,17,21,24,29],34,114000077],["2025-08-12",[6,7,15,22,37,42],36,114000078],["2025-08-15",[3,5,7,15,17,47],34,114000079],["2025-08-19",[2,23,25,33,41,46],22,114000080],["2025-08-22",[23,33,38,43,45,47],36,114000081],["2025-08-26",[3,6,22,32,35,39],27,114000082],["2025-08-29",[13,20,25,27,28,32],2,114000083],["2025-09-02",[2,6,9,19,20,30],25,114000084],["2025-09-05",[10,13,14,17,19,29],40,114000085],["2025-09-09",[12,20,25,26,40,45],34,114000086],["2025-09-12",[2,3,4,11,15,41],26,114000087],["2025-09-16",[7,17,18,22,25,47],38,114000088],["2025-09-19",[14,17,26,36,38,41],8,114000089],["2025-09-23",[5,14,22,25,27,45],3,114000090],["2025-09-26",[1,2,25,29,41,49],35,114000091],["2025-09-30",[19,20,22,32,36,42],35,114000092],["2025-10-03",[4,18,36,40,41,43],29,114000093],["2025-10-07",[2,9,16,34,42,43],33,114000094],["2025-10-10",[13,16,18,22,39,42],30,114000095],["2025-10-14",[11,16,20,31,39,41],6,114000096],["2025-10-17",[3,15,16,31,32,45],42,114000097],["2025-10-21",[14,20,25,42,44,49],12,114000098],["2025-10-24",[13,22,23,33,39,40],31,114000099],["2025-10-28",[5,8,11,12,18,39],37,114000100],["2025-10-31",[3,4,7,10,18,21],15,114000101],["2025-11-04",[16,25,27,35,47,48],14,114000102],["2025-11-07",[4,11,22,32,33,41],43,114000103],["2025-11-11",[11,16,24,42,44,47],32,114000104],["2025-11-14",[21,25,26,38,41,46],4,114000105],["2025-11-18",[8,9,10,23,24,43],45,114000106],["2025-11-21",[14,20,21,28,31,46],37,114000107],["2025-11-25",[2,10,12,20,23,24],28,114000108],["2025-11-28",[8,12,18,28,37,46],34,114000109],["2025-12-02",[14,20,32,35,42,48],28,114000110],["2025-12-05",[8,15,23,24,41,47],2,114000111],["2025-12-09",[5,10,18,26,28,44],48,114000112],["2025-12-12",[15,17,24,26,40,47],33,114000113],["2025-12-16",[6,7,15,19,24,33],46,114000114],["2025-12-19",[6,8,11,12,18,46],37,114000115],["2025-12-23",[1,3,12,33,39,41],29,114000116],["2025-12-26",[5,7,9,14,17,30],47,114000117],["2025-12-30",[5,10,15,20,24,29],34,114000118],["2026-01-02",[3,7,16,19,40,42],12,115000001],["2026-01-06",[2,23,33,38,39,45],6,115000002],["2026-01-09",[1,7,13,14,34,45],8,115000003],["2026-01-13",[2,10,18,19,39,49],24,115000004],["2026-01-16",[9,10,21,22,25,36],20,115000005],["2026-01-20",[2,7,26,41,44,45],46,115000006],["2026-01-23",[21,23,32,36,39,43],12,115000007],["2026-01-27",[4,11,24,25,29,30],8,115000008],["2026-01-30",[9,13,27,31,32,39],19,115000009],["2026-02-03",[6,14,32,33,39,43],13,115000010],["2026-02-06",[4,12,24,25,39,48],9,115000011],["2026-02-10",[6,16,20,21,24,35],13,115000012],["2026-02-12",[1,3,8,15,20,48],46,115000013],["2026-02-13",[9,20,25,35,39,48],47,115000014],["2026-02-14",[1,11,22,35,36,40],28,115000015],["2026-02-15",[3,6,11,18,25,28],35,115000016],["2026-02-16",[11,16,18,27,38,46],43,115000017],["2026-02-17",[6,12,24,26,37,46],36,115000018],["2026-02-18",[16,35,36,37,39,49],45,115000019],["2026-02-19",[20,28,29,31,35,41],6,115000020],["2026-02-20",[13,15,18,24,33,49],10,115000021],["2026-02-21",[12,13,17,27,41,48],46,115000022],["2026-02-22",[5,7,17,22,24,47],20,115000023],["2026-02-23",[6,10,23,27,47,48],30,115000024],["2026-02-24",[12,19,22,27,28,31],45,115000025],["2026-02-25",[7,15,22,38,45,49],31,115000026],["2026-02-26",[1,16,22,24,47,48],7,115000027],["2026-02-27",[14,18,19,34,45,47],48,115000028],["2026-02-28",[17,23,30,37,39,49],43,115000029],["2026-03-01",[4,7,34,40,44,49],37,115000030],["2026-03-02",[19,25,27,28,33,39],37,115000031],["2026-03-03",[5,26,27,35,45,46],37,115000032],["2026-03-06",[9,11,12,14,23,25],42,115000033],["2026-03-10",[5,11,29,37,43,47],10,115000034],["2026-03-13",[5,12,13,38,47,48],3,115000035],["2026-03-17",[2,6,10,22,40,45],17,115000036],["2026-03-20",[11,15,33,38,41,43],21,115000037],["2026-03-24",[14,33,41,42,44,48],47,115000038],["2026-03-27",[4,8,23,26,29,36],38,115000039],["2026-03-31",[5,11,25,40,45,47],39,115000040],["2026-04-03",[5,12,13,25,36,48],8,115000041],["2026-04-07",[1,2,6,16,18,26],47,115000042],["2026-04-10",[4,10,15,17,21,40],30,115000043],["2026-04-14",[4,8,21,23,24,43],13,115000044],["2026-04-17",[7,10,11,22,40,45],18,115000045],["2026-04-21",[1,6,17,19,20,40],22,115000046],["2026-04-24",[7,14,16,37,39,47],34,115000047],["2026-04-28",[6,10,14,25,26,32],7,115000048],["2026-05-01",[7,22,27,35,43,48],45,115000049],["2026-05-05",[4,17,23,28,33,37],15,115000050],["2026-05-08",[10,18,25,28,39,43],48,115000051],["2026-05-12",[6,12,18,19,32,36],34,115000052],["2026-05-15",[16,29,30,35,42,43],1,115000053],["2026-05-19",[4,20,22,26,38,47],27,115000054],["2026-05-22",[12,13,16,21,28,48],30,115000055],["2026-05-26",[3,27,29,37,47,48],11,115000056],["2026-05-29",[20,26,29,31,37,49],30,115000057],["2026-06-02",[8,9,16,20,37,49],2,115000058],["2026-06-05",[12,14,25,30,32,44],34,115000059],["2026-06-09",[13,18,25,39,40,46],31,115000060],["2026-06-12",[1,6,16,20,34,49],3,115000061],["2026-06-16",[1,2,9,11,28,36],41,115000062],["2026-06-19",[4,12,28,29,35,48],38,115000063],["2026-06-23",[12,18,29,33,34,39],30,115000064],["2026-06-26",[11,19,23,24,29,41],1,115000065],["2026-06-30",[4,10,16,29,36,45],14,115000066],["2026-07-03",[11,16,19,23,39,47],15,115000067],["2026-07-07",[8,13,15,18,19,42],37,115000068],["2026-07-10",[3,4,15,18,29,49],13,115000069],["2026-07-14",[10,25,34,36,45,46],7,115000070],["2026-07-17",[1,6,12,14,17,26],24,115000071],["2026-07-21",[2,8,15,26,35,46],11,115000072],["2026-07-24",[3,15,27,34,35,44],40,115000073],["2026-07-28",[8,19,24,26,32,43],47,115000074],["2026-07-31",[11,20,23,33,34,44],10,115000075],["2026-08-04",[4,9,15,30,36,49],40,115000076],["2026-08-07",[2,12,19,21,25,41],31,115000077],["2026-08-11",[8,12,16,24,29,46],10,115000078],["2026-08-14",[5,12,25,33,34,35],27,115000079],["2026-08-18",[1,14,25,27,29,43],2,115000080],["2026-08-21",[8,14,23,24,26,47],30,115000081],["2026-08-25",[12,24,26,32,35,40],6,115000082],["2026-08-28",[9,20,23,26,36,44],4,115000083],["2026-09-01",[10,16,19,26,29,48],30,115000084],["2026-09-04",[3,13,17,18,27,37],19,115000085],["2026-09-08",[3,15,28,35,47,49],27,115000086],["2026-09-11",[12,15,19,27,43,48],25,115000087],["2026-09-15",[2,3,18,21,22,39],7,115000088],["2026-09-18",[1,6,14,21,31,35],16,115000089],["2026-09-22",[14,15,18,30,35,45],10,115000090],["2026-09-25",[5,13,24,25,28,33],40,115000091],["2026-09-29",[1,2,4,13,30,38],27,115000092],["2026-10-02",[4,14,20,26,40,47],42,115000093],["2026-10-06",[4,6,20,32,36,39],23,115000094],["2026-10-09",[3,9,11,25,34,41],27,115000095],["2026-10-13",[3,31,35,36,47,48],32,115000096],["2026-10-16",[6,15,21,40,43,49],30,115000097],["2026-10-20",[2,5,19,33,40,43],6,115000098],["2026-10-23",[9,10,33,38,40,45],2,115000099],["2026-10-27",[8,14,16,34,38,41],9,115000100],["2026-10-30",[4,22,25,30,34,37],48,115000101],["2026-11-03",[2,23,24,25,29,39],31,115000102],["2026-11-06",[5,9,26,32,41,48],23,115000103],["2026-11-10",[11,23,30,32,40,41],28,115000104],["2026-11-13",[7,8,13,15,25,46],43,115000105]];
+
+const ZONES = [[1,9],[10,19],[20,29],[30,39],[40,49]];
+const N = DRAWS.length;
+const SUMBIN = [[50,89],[90,119],[120,149],[150,179],[180,209],[210,249]];
+
+/* ---------- helpers ---------- */
+function zoneOf(n){ for(let i=0;i<5;i++){ if(n>=ZONES[i][0]&&n<=ZONES[i][1]) return i; } return -1; }
+function pad(n){ return (n<10?"0":"")+n; }
+function counter50(rows, pick){
+  const c = new Array(50).fill(0);
+  for(const d of rows) for(const n of pick(d)) c[n]++;
+  return c;
+}
+function normC(c){
+  let lo=Infinity, hi=-Infinity;
+  for(let n=1;n<=49;n++){ if(c[n]<lo) lo=c[n]; if(c[n]>hi) hi=c[n]; }
+  const out = new Array(50).fill(0);
+  if(hi>lo) for(let n=1;n<=49;n++) out[n] = (c[n]-lo)/(hi-lo);
+  return out;
+}
+function percentile(arr, p){
+  const a = arr.slice().sort((x,y)=>x-y);
+  const i = Math.min(a.length-1, Math.max(0, Math.round(p*(a.length-1))));
+  return a[i];
+}
+function pct(x){ return (100*x).toFixed(1)+"%"; }
+function C(n,k){ if(k<0||k>n) return 0; let r=1; for(let i=1;i<=k;i++) r = r*(n-k+i)/i; return r; }
+
+/* ---------- model ---------- */
+function buildModel(rows, strategy){
+  const cAll = counter50(rows, d=>d[1]);
+  const c100 = counter50(rows.slice(-100), d=>d[1]);
+  const c30  = counter50(rows.slice(-30),  d=>d[1]);
+  const last = new Array(50).fill(-1);
+  rows.forEach((d,i)=>{ for(const n of d[1]) last[n]=i; });
+  const gap = new Array(50).fill(0);
+  for(let n=1;n<=49;n++) gap[n] = (last[n]<0) ? rows.length : rows.length-1-last[n];
+  const a = normC(cAll), b = normC(c100), c = normC(c30), g = normC(gap);
+  const w = new Array(50).fill(0);
+  for(let n=1;n<=49;n++){
+    if(strategy==="momentum")      w[n] = .15*a[n] + .35*b[n] + .50*c[n];
+    else if(strategy==="cold")     w[n] = .30*a[n] + .25*b[n] + .45*g[n];
+    else                           w[n] = .50*a[n] + .30*b[n] + .20*c[n];
+  }
+  const spAll = counter50(rows, d=>[d[2]]);
+  const sp100 = counter50(rows.slice(-100), d=>[d[2]]);
+  const sa = normC(spAll), sb = normC(sp100);
+  const sw = new Array(50).fill(0);
+  for(let n=1;n<=49;n++) sw[n] = .6*sa[n] + .4*sb[n];
+  const sums = rows.map(d=>d[1].reduce((x,y)=>x+y,0));
+  const thresholds = { lo: rows.length>=30? percentile(sums,.10):60, hi: rows.length>=30? percentile(sums,.90):240 };
+  return { w, sw, thresholds, cAll, c100, c30, gap, spAll, gapNow: gap, gapMax: Math.max.apply(null, gap.slice(1)) };
+}
+
+function scoreCombo(nums, model){
+  const {w, thresholds} = model;
+  let heat = 0; for(const n of nums) heat += w[n];
+  heat /= 6;
+  const sum = nums.reduce((a,b)=>a+b,0);
+  const sumInside = sum>=thresholds.lo && sum<=thresholds.hi;
+  const stSum = sumInside ? .30 : ((sum>=thresholds.lo-15 && sum<=thresholds.hi+15) ? .15 : 0);
+  const odd = nums.filter(n=>n%2===1).length;
+  const stOdd = odd===3 ? .25 : ((odd===2||odd===4) ? .20 : 0);
+  const big = nums.filter(n=>n>=25).length;
+  const stBig = big===3 ? .20 : ((big===2||big===4) ? .15 : 0);
+  const zc = new Set(nums.map(zoneOf)).size;
+  const stZone = zc>=4 ? .15 : (zc===3 ? .10 : 0);
+  let pairs=0; for(let i=0;i<5;i++) if(nums[i+1]-nums[i]===1) pairs++;
+  const stPair = pairs===0 ? .10 : (pairs===1 ? .05 : 0);
+  const struct = stSum+stOdd+stBig+stZone+stPair;
+  return { total:.65*heat+.35*struct, heat, struct,
+           parts:{ sum, sumInside, odd, stSum, stOdd, big, stBig, zc, stZone, pairs, stPair } };
+}
+
+function sampleCombo(model, rnd){
+  const rw = new Array(50).fill(0);
+  for(let n=1;n<=49;n++) rw[n] = 0.25 + model.w[n];
+  const idx = []; for(let n=1;n<=49;n++) idx.push(n);
+  const picked = [];
+  for(let k=0;k<6;k++){
+    let tot=0; for(const i of idx) tot += rw[i];
+    let r = rnd()*tot, acc=0, chosen=idx[idx.length-1];
+    for(const i of idx){ acc += rw[i]; if(acc>=r){ chosen=i; break; } }
+    picked.push(chosen); idx.splice(idx.indexOf(chosen),1);
+  }
+  return picked.sort((a,b)=>a-b);
+}
+function drawCombo(model, rnd, candidates, topFrac){
+  let best=null, pool=[];
+  for(let i=0;i<candidates;i++){
+    const c = sampleCombo(model, rnd);
+    const s = scoreCombo(c, model).total;
+    pool.push({c,s});
+    if(!best || s>best.s) best={c,s};
+  }
+  pool.sort((x,y)=>y.s-x.s);
+  const k = Math.max(1, Math.round(pool.length*topFrac));
+  const pick = pool[Math.floor(rnd()*k)].c;
+  return { combo: pick, score: scoreCombo(pick, model).total, best: best.c, bestScore: best.s };
+}
+function sampleSpecial(model, rnd, exclude){
+  const rw = new Array(50).fill(0);
+  for(let n=1;n<=49;n++) rw[n] = (exclude.indexOf(n)>=0) ? 0 : 0.25 + model.sw[n];
+  let tot=0; for(let n=1;n<=49;n++) tot+=rw[n];
+  let r=rnd()*tot, acc=0;
+  for(let n=1;n<=49;n++){ acc+=rw[n]; if(acc>=r) return n; }
+  return 49;
+}
+/* 可重現亂數（回測與理論首選用） */
+function mulberry32(seed){
+  let t = seed>>>0;
+  return function(){
+    t = (t + 0x6D2B79F5)>>>0;
+    let x = Math.imul(t ^ (t>>>15), 1 | t);
+    x = (x + Math.imul(x ^ (x>>>7), 61 | x)) ^ x;
+    return ((x ^ (x>>>14))>>>0) / 4294967296;
+  };
+}
+
+/* ---------- 歷史貼合度基準 ---------- */
+const HIT_BASE = (function(){ // 隨機組合與任一歷史期重疊 >=3 個號碼的機率
+  const tot = C(49,6);
+  return (C(6,3)*C(43,3) + C(6,4)*C(43,2) + C(6,5)*C(43,1) + C(6,6)) / tot;
+})();
+
+/* =========================================================
+   初始化：共用分析量
+   ========================================================= */
+const FULL = buildModel(DRAWS, "hot");
+const ANALYTICS = (function(){
+  const sums = DRAWS.map(d=>d[1].reduce((a,b)=>a+b,0));
+  const zoneCnt = new Array(5).fill(0);
+  const oddCnt = new Array(7).fill(0), bigCnt = new Array(7).fill(0), pairCnt = new Array(7).fill(0);
+  const tail = new Array(10).fill(0);
+  const sumBin = new Array(SUMBIN.length).fill(0);
+  DRAWS.forEach(d=>{
+    const ns = d[1];
+    ns.forEach(n=>{ zoneCnt[zoneOf(n)]++; tail[n%10]++; });
+    oddCnt[ns.filter(n=>n%2===1).length]++;
+    bigCnt[ns.filter(n=>n>=25).length]++;
+    let p=0; for(let i=0;i<5;i++) if(ns[i+1]-ns[i]===1) p++;
+    pairCnt[p]++;
+    const s = ns.reduce((a,b)=>a+b,0);
+    for(let i=0;i<SUMBIN.length;i++) if(s>=SUMBIN[i][0]&&s<=SUMBIN[i][1]) sumBin[i]++;
+  });
+  return { sums, zoneCnt, oddCnt, bigCnt, pairCnt, tail, sumBin,
+           sumLo: percentile(sums,.10), sumHi: percentile(sums,.90),
+           sumMean: sums.reduce((a,b)=>a+b,0)/sums.length };
+})();
+
+/* =========================================================
+   抽獎
+   ========================================================= */
+const els = id => document.getElementById(id);
+function ball(n, cls, label){
+  const b = '<div class="ball '+cls+'" data-n="'+n+'">'+pad(n)+'</div>';
+  if(!label) return b;
+  return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;">'
+       + '<small style="font-family:var(--font-cjk);font-size:10px;color:var(--dim);letter-spacing:1px;background:#0a0f1d;padding:0 4px;border-radius:3px;white-space:nowrap;">'+label+'</small>'
+       + b + '</div>';
+}
+function idleStage(){
+  let h = "";
+  for(let i=0;i<6;i++) h += ball(0,"idle");
+  h += '<span class="plus">+</span>' + ball(0,"idle special","特別號");
+  els("stage").innerHTML = h;
+}
+function renderStage(combo, special, animate){
+  let h = "";
+  combo.forEach((n,i)=>{ h += ball(n,"", ""); });
+  h += '<span class="plus">+</span>' + ball(special,"special","特別號");
+  els("stage").innerHTML = h;
+  if(animate) els("stage").querySelectorAll(".ball").forEach((b,i)=>{
+    b.style.animationDelay = (i*70)+"ms"; b.classList.add("pop");
+  });
+}
+function scoreBar(label, value, max, suffix, sub){
+  return '<div class="scorebox"><div class="k">'+label+'</div>'
+       + '<div class="v">'+value+' <span>/ '+max+'</span></div>'
+       + '<div class="track"><i style="width:'+Math.max(0,Math.min(100,100*value/max))+'%"></i></div>'
+       + '<div class="k" style="margin-top:7px">'+sub+'</div></div>';
+}
+
+let lastResult = null;
+function doDraw(mode){
+  const strategy = els("selStrategy").value;
+  const sets = parseInt(els("selSets").value,10);
+  const model = buildModel(DRAWS, strategy);
+  const rnd = Math.random;
+  if(mode === "best"){
+    const res = drawCombo(model, mulberry32(20261029), 20000, 1/20000); // 取樣本中評分最高者
+    const allowed = []; for(let n=1;n<=49;n++) if(res.combo.indexOf(n)<0) allowed.push(n);
+    let sp = allowed[0];
+    for(const n of allowed) if(model.sw[n] > model.sw[sp]) sp = n;
+    const sc = scoreCombo(res.combo, model);
+    lastResult = [{combo:res.combo, special:sp, score:sc}];
+    paint(res.combo, sp, model, strategy, sc.total, null);
+    return;
+  }
+  const results = [];
+  for(let i=0;i<sets;i++){
+    const res = drawCombo(model, rnd, 4000, 0.05);
+    const sp = sampleSpecial(model, rnd, res.combo);
+    results.push({combo:res.combo, special:sp, score:scoreCombo(res.combo,model), best:res.best});
+  }
+  lastResult = results;
+  paint(results[0].combo, results[0].special, model, strategy, results[0].score.total, results);
+}
+
+function paint(combo, special, model, strategy, scoreVal, results){
+  renderStage(combo, special, true);
+  const sc = scoreCombo(combo, model);
+  els("scorebar").innerHTML =
+      scoreBar("模型評分（0–100）", (sc.total*100).toFixed(1), 100, "",
+               "熱度權重 "+((sc.heat*100).toFixed(1))+" / 結構完整度 "+((sc.struct*100).toFixed(1))) +
+      scoreBar("熱度得分", (sc.heat*65).toFixed(1), 65, "",
+               "六個號碼的平均模型權重，佔總分 65%") +
+      scoreBar("結構得分", (sc.struct*35).toFixed(1), 35, "",
+               "和值、單雙、大小、區間、連號五項，佔總分 35%");
+
+  // 明細
+  const strategyName = {hot:"熱號優先", momentum:"近期動能", cold:"冷號回補"}[strategy];
+  let rows = combo.map(n=>{
+    const cells = [pad(n),
+      model.cAll[n], model.c100[n], model.c30[n], model.gap[n],
+      model.w[n].toFixed(3)];
+    return '<tr><td class="num" style="color:#f2c14e;font-weight:700">'+cells[0]+'</td>'
+      + '<td class="num">'+cells[1]+'</td><td class="num">'+cells[2]+'</td><td class="num">'+cells[3]+'</td>'
+      + '<td class="num">'+cells[4]+'</td>'
+      + '<td class="num"><span class="tag ok">'+cells[5]+'</span></td></tr>';
+  }).join("");
+  els("breakdown").innerHTML =
+    '<table><thead><tr><th class="num">號碼</th><th class="num">全期次數</th><th class="num">近100期</th>'
+   +'<th class="num">近30期</th><th class="num">遺漏期數</th><th class="num">權重('+strategyName+')</th></tr></thead>'
+   +'<tbody>'+rows+'</tbody></table>'
+   +'<p class="hint" style="margin:14px 0 0">特別號 '+pad(special)+'：特別號權重 '+model.sw[special].toFixed(3)
+   +'（全期開出 '+model.spAll[special]+' 次）</p>';
+
+  // 結構檢核
+  const p = sc.parts;
+  const fit = (function(){
+    let hit=0; DRAWS.forEach(d=>{ if(d[1].filter(n=>combo.indexOf(n)>=0).length>=3) hit++; });
+    return {hit, exp: (N*HIT_BASE)};
+  })();
+  const row = (name, val, ok)=>
+    '<tr><td>'+name+'</td><td class="num numline">'+val+'</td><td><span class="tag '+(ok?'ok':'no')+'">'
+    +(ok?'符合主流':'偏離主流')+'</span></td></tr>';
+  els("structTable").innerHTML =
+    '<table><thead><tr><th>檢核項目</th><th class="num">本次組合</th><th>對照歷史</th></tr></thead><tbody>'
+   + row("和值", p.sum, p.sumInside) 
+   + row("單雙（奇/偶）", p.odd+" 奇 "+ (6-p.odd) +" 偶", p.stOdd>=.20)
+   + row("大小（大/小）", p.big+" 大 "+ (6-p.big) +" 小", p.stBig>=.15)
+   + row("區間覆蓋", p.zc+" / 5 區", p.stZone>0)
+   + row("連號對數", p.pairs+" 對", p.stPair>0)
+   + '</tbody></table>';
+  els("fitNote").innerHTML = "此組合在近三年 "+N+" 期紀錄中，有 <strong>"+fit.hit+"</strong> 期與它重疊 3 個以上號碼"
+   + "（隨機組合的期望值約 "+fit.exp.toFixed(1)+" 期）。這是歷史分布上的相似度，不代表未來命中率。";
+
+  // 多注
+  if(results && results.length>1){
+    let h = '<div class="card" style="margin-top:18px"><h2>其他注數</h2><p class="hint">同一策略下另外抽出的組合。</p>';
+    h += results.slice(1).map((r,i)=>'<div style="padding:7px 0;border-bottom:1px solid #1c2540">'
+        +'<span class="numline" style="font-size:15px">'+r.combo.map(x=>'<b>'+pad(x)+'</b>').join(" ")
+        +' <u>'+pad(r.special)+'</u></span>'
+        +'<span style="float:right;color:#8f9ab5;font-family:var(--font-num)">評分 '+(r.score.total*100).toFixed(1)+'</span></div>').join("");
+    h += '</div>';
+    els("extraSets").innerHTML = h;
+  } else els("extraSets").innerHTML = "";
+}
+
+/* =========================================================
+   分析面板渲染
+   ========================================================= */
+function barsFrom(list, max, fmt){
+  return list.map(o=>'<div class="bar"><span class="lbl">'+o.k+'</span>'
+    +'<span class="fill" style="width:'+Math.max(2,100*o.v/max)+'%"></span>'
+    +'<span class="val">'+fmt(o)+'</span></div>').join("");
+}
+function vbarFrom(values, labels, color){
+  const max = Math.max.apply(null, values);
+  return values.map((v,i)=>'<div title="'+labels[i]+': '+v+'"><span style="color:#e8e4da">'+v+'</span>'
+    +'<i style="height:'+(100*v/max*0.82)+'%;background:'+color+'"></i><em>'+labels[i]+'</em></div>').join("");
+}
+function renderAnalysis(strategy){
+  const model = buildModel(DRAWS, strategy);
+  // meta chips
+  els("metaChips").innerHTML =
+      '<span class="chip">資料 <b>'+DRAWS[0][0]+' ~ '+DRAWS[N-1][0]+'</b></span>'
+    + '<span class="chip">共 <b>'+N+'</b> 期</span>'
+    + '<span class="chip">主號樣本 <b>'+(N*6)+'</b> 個</span>';
+  els("footRange").textContent = DRAWS[0][0]+" ~ "+DRAWS[N-1][0];
+  els("footCount").textContent = N;
+
+  // heat grid
+  const maxC = Math.max.apply(null, model.cAll.slice(1)), minC = Math.min.apply(null, model.cAll.slice(1));
+  let heat = "";
+  for(let n=1;n<=49;n++){
+    const t = (model.cAll[n]-minC)/(maxC-minC);
+    const bg = 'rgba('+Math.round(60+195*t)+','+Math.round(45+150*t)+','+Math.round(80-40*t)+','+(0.16+0.62*t)+')';
+    heat += '<div style="background:'+bg+'" title="'+pad(n)+'：'+model.cAll[n]+' 次">'+pad(n)
+          + '<em>'+model.cAll[n]+'</em></div>';
+  }
+  els("heatGrid").innerHTML = heat;
+  els("heatHint").innerHTML = "顏色越亮＝三年內出現越多次。最高 <b style='color:#f2c14e'>"+pad(model.cAll.indexOf(Math.max.apply(null,model.cAll.slice(1))))
+    +"</b>（"+maxC+" 次），最低 <b style='color:#8f9ab5'>"+pad(model.cAll.indexOf(minC))+"</b>（"+minC+" 次），"
+    +"平均每號 "+(N*6/49).toFixed(1)+" 次。";
+
+  // 頻率排行（依號碼排序的長條）
+  const list = [];
+  for(let n=1;n<=49;n++) list.push({k:pad(n), v:model.cAll[n], n:n});
+  els("freqAll").innerHTML = barsFrom(list, maxC, o=>o.v+" 次");
+
+  const srt = list.slice().sort((a,b)=>b.v-a.v);
+  els("hotColdCards").innerHTML =
+      '<p class="hint" style="margin:16px 0 6px">最熱 6 號</p><div class="listline">'
+    + srt.slice(0,6).map(o=>'<span class="mini hot">'+o.k+' <b>'+o.v+'</b></span>').join("")+'</div>'
+    + '<p class="hint" style="margin:16px 0 6px">最冷 6 號</p><div class="listline">'
+    + srt.slice(-6).map(o=>'<span class="mini cold">'+o.k+' <b>'+o.v+'</b></span>').join("")+'</div>';
+
+  // 特別號
+  const spMax = Math.max.apply(null, model.spAll.slice(1));
+  const spList = []; for(let n=1;n<=49;n++) spList.push({k:pad(n), v:model.spAll[n]});
+  els("freqSpecial").innerHTML = barsFrom(spList, spMax, o=>o.v+" 次");
+  els("spExpect").textContent = (N/49).toFixed(2);
+
+  // 區間
+  els("zoneBars").innerHTML = barsFrom(
+    ANALYTICS.zoneCnt.map((v,i)=>({k:pad(ZONES[i][0])+"-"+ZONES[i][1], v:v})),
+    Math.max.apply(null, ANALYTICS.zoneCnt),
+    o=>o.v+" 次");
+
+  // 遺漏
+  const gaps = []; for(let n=1;n<=49;n++) gaps.push({k:pad(n), v:model.gap[n]});
+  gaps.sort((a,b)=>b.v-a.v);
+  els("gapBars").innerHTML = barsFrom(gaps.slice(0,10), gaps[0].v, o=>o.v+" 期");
+
+  // 單雙 / 大小 / 連號
+  els("oddChart").innerHTML = vbarFrom(ANALYTICS.oddCnt, [0,1,2,3,4,5,6].map(k=>k+"奇"+ (6-k)+"偶"), "linear-gradient(180deg,#ffe6a3,#a67c1a)");
+  els("bigChart").innerHTML = vbarFrom(ANALYTICS.bigCnt, [0,1,2,3,4,5,6].map(k=>k+"大"), "linear-gradient(180deg,#ffb3bf,#8c1528)");
+  els("pairChart").innerHTML = vbarFrom(ANALYTICS.pairCnt, ["0對","1對","2對","3對","4對","5對","6對"], "linear-gradient(180deg,#a8f0d8,#14795c)");
+  // 和值
+  els("sumChart").innerHTML = vbarFrom(ANALYTICS.sumBin, SUMBIN.map(b=>b[0]+"~"+b[1]), "linear-gradient(180deg,#ffe6a3,#a67c1a)");
+  els("sumHint").innerHTML = "三年平均和值 <b class='numline'>"+ANALYTICS.sumMean.toFixed(1)+"</b>，"
+    +"第 10–90 百分位區間 <b class='numline'>"+ANALYTICS.sumLo+" ~ "+ANALYTICS.sumHi+"</b>（模型結構評分採用此區間）。";
+  // 尾數
+  els("tailChart").innerHTML = vbarFrom(ANALYTICS.tail, [0,1,2,3,4,5,6,7,8,9].map(t=>"尾"+t), "linear-gradient(180deg,#d8d2c4,#7a7364)");
+
+  // 權重排行
+  const wl = []; for(let n=1;n<=49;n++) wl.push({k:pad(n), v:model.w[n]});
+  wl.sort((a,b)=>b.v-a.v);
+  els("weightHigh").innerHTML = '<p class="hint" style="margin:0 0 8px">權重最高 10 號</p>'
+    + barsFrom(wl.slice(0,10), wl[0].v, o=>o.v.toFixed(3));
+  els("weightLow").innerHTML = '<p class="hint" style="margin:0 0 8px">權重最低 10 號</p>'
+    + barsFrom(wl.slice(-10).reverse(), wl[0].v, o=>o.v.toFixed(3));
+}
+
+/* =========================================================
+   歷史表
+   ========================================================= */
+function renderHistory(year){
+  const rows = DRAWS.map((d,i)=>({d,i})).filter(o=> year==="all" || o.d[0].slice(0,4)===year).reverse();
+  els("historyBody").innerHTML = rows.map(o=>{
+    const d = o.d;
+    const nums = d[1].map(n=>'<b>'+pad(n)+'</b>').join(" ");
+    const isLast = o.i >= N-20;
+    return '<tr'+(isLast?' style="background:rgba(242,193,78,.05)"':'')+'><td>'+d[0].slice(0,4)+'</td>'
+      +'<td class="numline">'+d[0]+'</td><td class="numline">'+d[3]+'</td>'
+      +'<td class="numline">'+nums+'</td><td class="num numline" style="color:#e03e57;font-weight:700">'+pad(d[2])+'</td></tr>';
+  }).join("");
+}
+
+/* =========================================================
+   回測
+   ========================================================= */
+function runBacktest(){
+  const status = els("btStatus"), out = els("btResult");
+  status.textContent = "計算中…";
+  setTimeout(()=>{
+    const t0 = performance.now();
+    const START = 100;
+    const rnd = mulberry32(20261029);
+    const hits = new Array(7).fill(0);
+    let trials = 0, sumHit = 0;
+    for(let t=START; t<N; t++){
+      const rownd = mulberry32(1000+t);
+      const m = buildModel(DRAWS.slice(0,t), "hot");
+      const res = drawCombo(m, rownd, 600, 0.20);
+      const actual = DRAWS[t][1];
+      const k = res.combo.filter(n=>actual.indexOf(n)>=0).length;
+      hits[k]++; sumHit += k; trials++;
+    }
+    const base = [0,1,2,3,4,5,6].map(k=>({k, p: C(6,k)*C(43,6-k)/C(49,6)}));
+    const avg = sumHit/trials;
+    let tbl = '<table><thead><tr><th>命中主號個數</th><th class="num">期數</th><th class="num">模型機率</th>'
+            + '<th class="num">隨機基準</th><th>對照</th></tr></thead><tbody>';
+    for(let k=6;k>=0;k--){
+      const p = hits[k]/trials, b = base[k].p;
+      const tag = k>=3 ? (p>b*1.15?'ok':'no') : 'ok';
+      tbl += '<tr'+(k>=3?' style="background:rgba(242,193,78,.05)"':'')+'><td class="numline">'
+        + (k===6?'6（頭獎）':k)+'</td><td class="num">'+hits[k]+'</td>'
+        + '<td class="num">'+(100*p).toFixed(2)+'%</td><td class="num">'+(100*b).toFixed(2)+'%</td>'
+        + '<td><span class="tag '+(k>=3?tag:'')+'">'+(k>=3?(p>b?'略高於':'與隨機相當'):'—')+'</span></td></tr>';
+    }
+    tbl += '</tbody></table>';
+    const p3 = (hits[3]+hits[4]+hits[5]+hits[6])/trials;
+    const b3 = base[3].p+base[4].p+base[5].p+base[6].p;
+    out.innerHTML = tbl
+      + '<div class="note" style="margin-top:16px">共回測 <b>'+trials+'</b> 期。平均命中 <b class="numline">'
+      + avg.toFixed(3)+'</b> 個主號（隨機基準 <b class="numline">'+(6*6/49).toFixed(3)+'</b> 個）；'
+      + '命中 3 個以上共 <b class="numline">'+(100*p3).toFixed(2)+'%</b>（隨機基準 <b class="numline">'
+      + (100*b3).toFixed(2)+'%</b>）。</div>'
+      + '<div class="note warn" style="margin-top:12px">結論：模型與隨機選號的命中分布沒有實質差異，'
+      + '這符合「每組號碼中獎機率相同」的事實。此工具提供的是<strong>歷史分布的貼合度分析</strong>，不是中獎預測。</div>'
+      + '<p class="hint" style="margin-top:10px">回測使用固定亂數種子，相同資料下結果可重現。計算耗時 '
+      + ((performance.now()-t0)/1000).toFixed(1)+' 秒。</p>';
+    status.textContent = "完成（"+trials+" 期）";
+  }, 30);
+}
+
+/* =========================================================
+   事件綁定
+   ========================================================= */
+els("btnDraw").addEventListener("click",()=>doDraw("draw"));
+els("btnBest").addEventListener("click",()=>doDraw("best"));
+els("btnCopy").addEventListener("click",()=>{
+  if(!lastResult){ alert("請先抽出一組號碼"); return; }
+  const txt = lastResult.map(r=>r.combo.map(pad).join(" ")+"  + "+pad(r.special)).join("\n");
+  (navigator.clipboard? navigator.clipboard.writeText(txt): Promise.reject())
+    .then(()=>{ els("btnCopy").textContent="已複製 ✓"; setTimeout(()=>els("btnCopy").textContent="複製號碼",1600); })
+    .catch(()=>{ prompt("請手動複製：", txt); });
+});
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", x===t));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on", p.id==="panel-"+t.dataset.panel));
+}));
+els("btnBacktest").addEventListener("click", runBacktest);
+
+let curStrategy = "hot";
+["hot","momentum","cold"].forEach(s=>{
+  const label = {hot:"熱號優先（預設）", momentum:"近期動能", cold:"冷號回補"}[s];
+  const b = document.createElement("button");
+  b.className="pill"; b.textContent=label; b.setAttribute("aria-pressed", s===curStrategy);
+  b.addEventListener("click",()=>{
+    curStrategy=s; els("selStrategy").value=s;
+    document.querySelectorAll("#strategyPills .pill").forEach((x,i)=>x.setAttribute("aria-pressed", ["hot","momentum","cold"][i]===s));
+    renderAnalysis(s);
+  });
+  els("strategyPills").appendChild(b);
+});
+const YEARS = Array.from(new Set(DRAWS.map(d=>d[0].slice(0,4)))).sort().reverse();
+["all"].concat(YEARS).forEach((y,i)=>{
+  const b = document.createElement("button");
+  b.className="pill"; b.textContent = y==="all"?"全部 "+N+" 期":y+" 年";
+  b.setAttribute("aria-pressed", i===0);
+  b.addEventListener("click",()=>{
+    els("yearPills").querySelectorAll(".pill").forEach(x=>x.setAttribute("aria-pressed", x===b));
+    renderHistory(y);
+  });
+  els("yearPills").appendChild(b);
+});
+
+/* ---------- boot ---------- */
+els("scopeSub").innerHTML = "以 "+DRAWS[0][0].slice(0,4)+"–"+DRAWS[N-1][0].slice(0,4)+" 年官方開獎紀錄建模，每次抽獎依分析結果產出評分最高的號碼組合";
+els("structHint").innerHTML = "比對本次組合與近三年 "+N+" 期的常見結構區間（和值取歷史第 10–90 百分位）。";
+idleStage();
+renderAnalysis("hot");
+renderHistory("all");
+doDraw("draw");
+</script>
+</body>
+</html>
